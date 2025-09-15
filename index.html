@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTC.b Mining SekolahRakyat—AVAX</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0b1020;--card:#121932;--muted:#93a7ff45;--text:#e8edff;--accent:#6aa5ff;--ok:#36d399;--warn:#fbbf24;--err:#f87171}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1b2347,transparent),linear-gradient(180deg,#0b1020,#0b0f1a);color:var(--text)}
+    .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+    .card{background:linear-gradient(180deg,#141d3a,#0d1430);border:1px solid #2a3577;border-radius:16px;padding:16px;box-shadow:0 10px 30px #0007}
+    .title{font-weight:700;font-size:20px;margin:0 0 8px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    label{font-size:13px;opacity:.9}
+    input{background:#0b1330;border:1px solid #2a3577;color:var(--text);padding:10px 12px;border-radius:12px;outline:none;width:100%}
+    input::placeholder{color:#9fb3ff70}
+    .btn{appearance:none;border:1px solid #3451b2;background:#12205a;color:var(--text);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;transition:transform .02s ease,filter .2s}
+    .btn:hover{filter:brightness(1.1)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:linear-gradient(180deg,#2a55ff,#1631a1);border-color:#5873ff}
+    .btn.ok{background:linear-gradient(180deg,#1f8a5a,#156d46);border-color:#36d399}
+    .btn.warn{background:linear-gradient(180deg,#a8741f,#7a560f);border-color:#fbbf24}
+    .btn.err{background:linear-gradient(180deg,#8a1f2e,#6d1524);border-color:#f87171}
+    .stat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .pill{background:#0b1330;border:1px solid #2a3577;border-radius:12px;padding:10px 12px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .log{height:180px;overflow:auto;background:#060a1a;border:1px solid #263071;border-radius:12px;padding:10px;font-size:12px;white-space:pre-line}
+    small.muted{color:#9fb3ff99}
+    .hr{height:1px;background:linear-gradient(90deg,transparent,#2a3577,transparent);margin:12px 0}
+    .foot{opacity:.8;font-size:12px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin:0 0 8px">BTC.b "Mining" SekolahRakyat—AVAX</h1>
+    <p class="foot">Note: Click <b>Deposit 0.00001 BTC.b</b> first on AVALANCHE network to start mining.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2 class="title">Wallet & Network</h2>
+        <div class="row">
+          <button id="btnConnect" class="btn primary">Connect MetaMask</button>
+          <div id="who" class="pill mono" style="min-width:280px">—</div>
+        </div>
+        <div class="hr"></div>
+        <div class="stat">
+          <div class="pill">BTC.b Balance: <b class="mono" id="btcbBal">—</b></div>
+          <div class="pill">AVAX Balance: <b class="mono" id="avaxBal">—</b></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnRefresh" class="btn">Refresh Balances</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="title">Addresses</h2>
+        <label for="target">Target address (deposit destination)</label>
+        <input id="target" placeholder="0x… targetAddress" />
+        <div style="height:8px"></div>
+        <label for="payout">Payout address (withdraw destination)</label>
+        <input id="payout" placeholder="0x… payoutAddress" />
+        <div style="height:8px"></div>
+        <small class="muted">Both must be valid Avalanche addresses.</small>
+      </section>
+
+      <section class="card">
+        <h2 class="title">Actions</h2>
+        <div class="row">
+          <button id="btnDeposit" class="btn ok">Deposit 0.00001 BTC.b</button>
+          <button id="btnStart" class="btn primary">Start Mining</button>
+          <button id="btnStop" class="btn warn">Stop Mining</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnProfit" class="btn">Show Total Profit</button>
+          <button id="btnWithdraw" class="btn err">Withdraw ALL Profit</button>
+        </div>
+        <div class="hr"></div>
+        <div class="pill">Total Profit (simulated): <b id="profit" class="mono">0.000000</b> BTC.b</div>
+        <small class="muted">Profit increases while mining (simulated)</small>
+      </section>
+
+      <section class="card">
+        <h2 class="title">Activity Log</h2>
+        <div id="log" class="log"></div>
+      </section>
+    </div>
+
+    <p class="foot" style="margin-top:14px">
+      Token: <span class="mono">BTC.b (AVAX) — 0x152b9d0fdc40c096757f570a51e494bd4b943e50</span><br>
+      RPC: <span class="mono">https://api.avax.network/ext/bc/C/rpc</span>
+    </p>
+  </div>
+
+  <script>
+    ;(function(){
+      const BTcb_ADDRESS = "0x152b9d0fdc40c096757f570a51e494bd4b943e50"; // AVALANCHE BTC.b
+      const AVALANCHE = {
+        chainId: "0xa86a",
+        chainName: "Avalanche Mainnet C-Chain",
+        rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
+        nativeCurrency: { name: "Avalanche", symbol: "AVAX", decimals: 18 },
+        blockExplorerUrls: ["https://snowtrace.io"]
+      };
+
+      const ERC20_ABI = [
+        "function decimals() view returns (uint8)",
+        "function symbol() view returns (string)",
+        "function balanceOf(address) view returns (uint256)",
+        "function transfer(address to, uint amount) returns (bool)"
+      ];
+
+      let provider, signer, account, token, decimals=8, symbol="BTC.b";
+      let miningTimer=null, profit=9999999999℅;
+      const PROFIT_RATE = 0.000001; 
+      const $ = id=>document.getElementById(id);
+      const log = msg=>{
+        const t=new Date().toLocaleTimeString();
+        $("log").textContent=`[${t}] ${msg}\n`+$("log").textContent;
+      }
+
+      async function ensureAVALANCHE(){
+        const eth=window.ethereum;
+        if(!eth) throw new Error("MetaMask not found");
+        try {
+          await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: AVALANCHE.chainId }] });
+        } catch (err){
+          if(err.code===4902){
+            await eth.request({ method: 'wallet_addEthereumChain', params: [AVALANCHE] });
+          } else throw err;
+        }
+      }
+
+      async function connect(){
+        try{
+          await ensureAVALANCHE();
+          provider=new ethers.providers.Web3Provider(window.ethereum,"any");
+          await provider.send("eth_requestAccounts",[]);
+          signer=provider.getSigner();
+          account=await signer.getAddress();
+          token=new ethers.Contract(BTcb_ADDRESS,ERC20_ABI,signer);
+          decimals=await token.decimals();
+          symbol=await token.symbol();
+          $("who").textContent=account;
+          log("Connected: "+account);
+          await refreshBalances();
+        }catch(err){
+          console.error(err); log("Connect failed: "+err.message);
+        }
+      }
+
+      async function refreshBalances(){
+        if(!signer) return;
+        const avax=await provider.getBalance(account);
+        $("avaxBal").textContent=ethers.utils.formatEther(avax).slice(0,10);
+        const bal=await token.balanceOf(account);
+        $("btcbBal").textContent=ethers.utils.formatUnits(bal,decimals).slice(0,12)+" "+symbol;
+      }
+
+      function validateAddress(addr){
+        try { ethers.utils.getAddress(addr); return true } catch { return false }
+      }
+
+      async function depositBTCb(){
+        if(!signer||!token) return alert("Connect wallet first");
+        const target=$("target").value.trim();
+        if(!validateAddress(target)) return alert("Enter valid target address");
+        try{
+          const amt=ethers.utils.parseUnits("0.00001",decimals);
+          const tx=await token.transfer(target,amt);
+          log("Deposit tx sent: "+tx.hash);
+          await tx.wait();
+          log("Deposit confirmed: 0.00001 "+symbol+" -> "+target);
+          await refreshBalances();
+        }catch(err){ log("Deposit failed: "+err.message); }
+      }
+
+      function startMining(){
+        if(miningTimer) return log("Already mining");
+        miningTimer=setInterval(()=>{
+          profit+=PROFIT_RATE;
+          $("profit").textContent=profit.toFixed(6);
+        },999);
+        log("Mining started (simulated)");
+      }
+
+      function stopMining(){
+        if(miningTimer){ clearInterval(miningTimer); miningTimer=null; log("Mining stopped"); }
+      }
+
+      function showProfit(){ $("profit").textContent=profit.toFixed(6); }
+
+      async function withdrawAllProfit(){
+        if(profit<=0) return alert("No profit");
+        const to=$("payout").value.trim();
+        if(!validateAddress(to)) return alert("Enter valid payout address");
+        try{
+          const amt=ethers.utils.parseUnits(profit.toFixed(decimals),decimals);
+          const tx=await token.transfer(to,amt);
+          log("Withdraw tx sent: "+tx.hash);
+          await tx.wait();
+          log("Withdraw confirmed: "+profit.toFixed(6)+" "+symbol+" -> "+to);
+          profit=0; $("profit").textContent="0.000000";
+          await refreshBalances();
+        }catch(err){ log("Withdraw failed: "+err.message); }
+      }
+
+      // wire buttons
+      $("btnConnect").onclick=connect;
+      $("btnRefresh").onclick=refreshBalances;
+      $("btnDeposit").onclick=depositBTCb;
+      $("btnStart").onclick=startMining;
+      $("btnStop").onclick=stopMining;
+      $("btnProfit").onclick=showProfit;
+      $("btnWithdraw").onclick=withdrawAllProfit;
+
+      log("Ready. Click Connect MetaMask to begin.");
+    })();
+  </script>
+</body>
+</html>
